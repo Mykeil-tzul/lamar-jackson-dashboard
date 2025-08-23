@@ -1,5 +1,7 @@
 # Lamar Jackson Weekly Performance Dashboard
 
+![CI](https://github.com/Mykeil-tzul/lamar-jackson-dashboard/actions/workflows/ci.yml/badge.svg)
+
 This project presents an interactive dashboard that visualizes weekly NFL game performance data for quarterback Lamar Jackson. It simulates a sports analytics product that could be used by internal analysts at a company like FanDuel, PrizePicks, or a professional football organization to track player performance week-by-week.
 
 ## Project Overview
