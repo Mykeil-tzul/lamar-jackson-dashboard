@@ -19,12 +19,10 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install pip and upgrade
-        run: python -m ensurepip && pip install --upgrade pip
-
-      - name: Install project dependencies
+      - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run import check
+      - name: Run tests
         run: |
-          python -c "import duckdb, streamlit; print('Imports successful')"
+          pip install pytest
+          pytest
