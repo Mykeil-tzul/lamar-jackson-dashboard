@@ -2,8 +2,6 @@
 
 This project presents an interactive dashboard that visualizes weekly NFL game performance data for quarterback Lamar Jackson. It simulates a sports analytics product that could be used by internal analysts at a company like FanDuel, PrizePicks, or a professional football organization to track player performance week-by-week.
 
-![CI](https://github.com/Mykeil-tzul/lamar-jackson-dashboard/actions/workflows/ci.yml/badge.svg)
-
 ## Project Overview
 
 The dashboard is built using Streamlit and powered by DuckDB for fast, local querying. Users can select a season and filter by individual week to view detailed stats such as passing yards, rushing attempts, completion percentage, and total touchdowns.
