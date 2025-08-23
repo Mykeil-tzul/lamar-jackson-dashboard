@@ -48,6 +48,37 @@ LAMAR_JACKSON_PIPELINE/
 - Streamlit
 - DuckDB
 
+## Challenges Faced
+
+1. Pandas Version Conflicts in GitHub Actions
+While setting up continuous integration with GitHub Actions, I encountered dependency conflicts between fastparquet, nfl-data-py, and pandas.
+
+fastparquet required pandas >=1.5.0
+
+nfl-data-py pinned pandas <2.0
+
+My original code used pandas==2.0.0, which broke the build
+
+✅ Fix: Aligned all packages to use pandas==1.5.3, the latest version compatible with both tools, which allowed CI to pass.
+
+2. CI Workflow Setup for Python Projects
+Configuring the .github/workflows/ci.yml file required trial-and-error to:
+
+Properly install dependencies
+
+Cache Python packages
+
+Ensure requirements.txt worked in the GitHub Actions runner environment
+
+✅ Fix: Tweaked the workflow and ensured consistent local vs CI environments. Added clear version pins in requirements.txt to avoid future conflicts.
+
+3. Real-Time Data Reliability
+The nfl_data_py package pulls live stats from NFL's Next Gen Stats, which occasionally failed during CI testing due to rate limits or unstable endpoints.
+
+✅ Fix: Wrapped critical API calls with error handling to prevent crashes during CI runs and dashboard refresh.
+
+
+
 ## Setup Instructions
 
 Clone the repo:
@@ -63,6 +94,8 @@ pip install -r requirements.txt
 Run the dashboard locally:
 
 streamlit run scripts/lamar_dashboard.py
+
+----------
 
 Notes
 This version uses static, simulated player data.
