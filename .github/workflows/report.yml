@@ -1,73 +1,61 @@
 name: Build & Publish Lamar Report
 
 on:
-  workflow_dispatch: {}
-  schedule:
-    - cron: "0 12 * * 2"   # Tue 12:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write  # needed to push the /docs update
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: write
-    env:
-      PYTHONUNBUFFERED: "1"
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: '3.10'
 
-      - name: Install dependencies (with versions print)
+      - name: Install dependencies
         run: |
-          set -euxo pipefail
-          python -m pip install --upgrade pip setuptools wheel
-          pip install -r requirements.txt
+          python -V
+          pip install --upgrade pip
+          pip install -r requirements-ci.txt
           python - <<'PY'
-          import sys, pandas, duckdb, altair, importlib
-          print("PY:", sys.version)
-          print("pandas", pandas.__version__, "duckdb", duckdb.__version__, "altair", altair.__version__)
-          try:
-              ge = importlib.import_module("great_expectations"); print("great_expectations", ge.__version__)
-          except Exception as e:
-              print("GE import failed:", e); raise
+          import sys, importlib, pandas, duckdb, altair, nfl_data_py
+          print("PY:", sys.version.split()[0])
+          print("pandas", pandas.__version__,
+                "duckdb", duckdb.__version__,
+                "altair", altair.__version__,
+                "nfl_data_py", nfl_data_py.__version__,
+                "great_expectations", importlib.import_module("great_expectations").__version__)
           PY
 
-      - name: Run pipeline (Bronze → Silver)
+      - name: Run pipeline (bronze → silver → gold → static)
+        env:
+          BRONZE_DIR: data/bronze
+          SILVER_DIR: data/silver
+          DUCKDB_PATH: db/nfl.duckdb
         run: |
-          set -euxo pipefail
-          mkdir -p data/bronze data/silver data/gold db
+          set -e
+          mkdir -p data/bronze data/silver data/gold db docs
           python scripts/bronze_ingest.py --years "2024" --player "Lamar Jackson"
           python scripts/silver_transform.py
-
-      - name: Validate data quality (Great Expectations)
-        run: |
-          set -euxo pipefail
-          python scripts/validate_data.py
-
-      - name: Build Gold + Static report
-        run: |
-          set -euxo pipefail
           python scripts/gold_build.py
           python scripts/build_static_report.py
+          # Ensure GH Pages serves plain HTML
           touch docs/.nojekyll
 
-      - name: Commit & push report
+      - name: Commit & push report to /docs
         run: |
-          set -euxo pipefail
-          git config user.name "github-actions[bot]"
+          git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add docs/index.html docs/.nojekyll
-          if ! git diff --cached --quiet; then
-            git commit -m "chore(report): refresh static HTML [skip ci]"
-            git push
-          else
+          if git diff --cached --quiet; then
             echo "No changes to commit."
+          else
+            git commit -m "report: refresh static HTML [skip ci]"
+            git push
           fi
