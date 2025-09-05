@@ -23,12 +23,14 @@ jobs:
           python -V
           pip install --upgrade pip
           pip install -r requirements-ci.txt
-          python - <<'PY'
-          import importlib
-          for m in ["pandas","duckdb","altair","nfl_data_py","pyarrow","pytest"]:
-              mod = importlib.import_module(m)
-              print(m, getattr(mod, "__version__", "unknown"))
-          PY
+
+      # 🔽 build the small dataset needed by tests
+      - name: Build bronze→silver→gold (minimal)
+        run: |
+          mkdir -p data/bronze data/silver data/gold db
+          python scripts/bronze_ingest.py --years "2024" --player "Lamar Jackson"
+          python scripts/silver_transform.py
+          python scripts/gold_build.py
 
       - name: Run tests
         run: python -m pytest -q
