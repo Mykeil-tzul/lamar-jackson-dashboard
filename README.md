@@ -1,6 +1,6 @@
 # 🏈 Lamar Jackson Weekly Performance Dashboard
 
-![CI](https://github.com/Mykeil-tzul/lamar-jackson-dashboard/actions/workflows/ci.yml/badge.svg)
+[![Build & Publish Lamar Report](https://github.com/Mykeil-tzul/lamar-jackson-dashboard/actions/workflows/report.yml/badge.svg)](https://github.com/Mykeil-tzul/lamar-jackson-dashboard/actions/workflows/report.yml)
 
 A Medallion Architecture pipeline (Bronze → Silver → Gold) with Streamlit dashboard - A real-time data pipeline built using Python, DuckDB, and Streamlit to track and visualize Lamar Jackson’s game-by-game stats. This project includes automated testing and CI/CD using GitHub Actions.
 
