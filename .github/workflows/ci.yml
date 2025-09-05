@@ -1,4 +1,4 @@
-name: ci: use pinned requirements + pytest
+name: "ci: use pinned requirements + pytest"
 
 on:
   push:
