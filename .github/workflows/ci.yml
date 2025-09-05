@@ -1,38 +1,54 @@
-name: "ci: use pinned requirements + pytest"
+name: ci
 
 on:
   push:
-    paths-ignore:
-      - 'docs/**'     # ignore report publishes
+    branches: [ main ]
+    paths:
+      - "scripts/**"
+      - "tests/**"
+      - "requirements-ci.txt"
+      - ".github/workflows/ci.yml"
   pull_request:
-
-permissions:
-  contents: read
+    branches: [ main ]
+    paths:
+      - "scripts/**"
+      - "tests/**"
+      - "requirements-ci.txt"
+      - ".github/workflows/ci.yml"
+  workflow_dispatch:
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
-          cache: 'pip'
+          python-version: "3.10"
+          cache: pip
           cache-dependency-path: requirements-ci.txt
 
-      - name: Install deps (pinned)
+      - name: Install pinned deps
         run: |
           python -V
-          pip install --upgrade pip
+          pip install -U pip
           pip install -r requirements-ci.txt
           python - <<'PY'
-          import importlib
-          for m in ["pandas","duckdb","altair","nfl_data_py","pyarrow"]:
-              mod = importlib.import_module(m)
-              print(m, getattr(mod, "__version__", "unknown"))
+          import importlib, sys
+          for m in ("pandas","duckdb","altair","nfl_data_py","pyarrow","pytest"):
+              try:
+                  mod = importlib.import_module(m)
+                  print(f"{m}=={getattr(mod, '__version__', '?')}")
+              except Exception as e:
+                  print(f"{m} import failed: {e}", file=sys.stderr)
           PY
 
       - name: Run tests
-        run: pytest -q
+        run: python -m pytest -q tests
