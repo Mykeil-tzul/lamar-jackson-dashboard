@@ -1,13 +1,10 @@
-name: ci: tests
+name: ci: use pinned requirements + pytest
 
 on:
   push:
-    branches: [ main ]
     paths-ignore:
-      - 'docs/**'
-      - '.github/workflows/report.yml'
+      - 'docs/**'     # ignore report publishes
   pull_request:
-    branches: [ main ]
 
 permissions:
   contents: read
@@ -27,6 +24,7 @@ jobs:
 
       - name: Install deps (pinned)
         run: |
+          python -V
           pip install --upgrade pip
           pip install -r requirements-ci.txt
           python - <<'PY'
