@@ -1,10 +1,7 @@
-name: "ci: run tests"
+name: "ci: use pinned requirements + pytest"
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
   workflow_dispatch:
 
 permissions:
@@ -13,6 +10,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,22 +20,24 @@ jobs:
         with:
           python-version: "3.10"
           cache: "pip"
-          cache-dependency-path: |
-            requirements-ci.txt
+          cache-dependency-path: requirements-ci.txt
 
-      - name: Install dependencies (pinned)
+      - name: Install deps (pinned for CI)
         run: |
           python -V
-          pip install --upgrade pip
+          pip install -U pip
           pip install -r requirements-ci.txt
           python - <<'PY'
           import importlib
           for m in ["pandas","duckdb","altair","nfl_data_py","pyarrow","pytest"]:
-              mod = importlib.import_module(m)
-              print(f"{m}: {getattr(mod,'__version__','unknown')}")
+              try:
+                  mod = importlib.import_module(m)
+                  print(m, getattr(mod, "__version__", "unknown"))
+              except Exception as e:
+                  print("FAILED", m, e)
           PY
 
-      - name: Build data for tests (bronze → silver → gold)
+      - name: Build data (bronze → silver → gold)
         run: |
           mkdir -p data/bronze data/silver data/gold db
           python scripts/bronze_ingest.py --years "2024" --player "Lamar Jackson"
@@ -46,17 +46,12 @@ jobs:
 
       - name: Show gold sample (debug)
         run: |
-          ls -la data/gold || true
           python - <<'PY'
-          import os, pandas as pd
-          p = "data/gold/fact_lamar_weekly.csv"
-          print("gold exists:", os.path.exists(p))
-          if os.path.exists(p):
-              df = pd.read_csv(p)
-              print("rows:", len(df), "cols:", list(df.columns))
-              print(df.head().to_string(index=False))
+          import pandas as pd
+          df = pd.read_csv("data/gold/fact_lamar_weekly.csv")
+          print("rows:", len(df), "cols:", list(df.columns))
+          print(df.head().to_string(index=False))
           PY
 
       - name: Run pytest
-        run: |
-          python -m pytest -q
+        run: python -m pytest -q
