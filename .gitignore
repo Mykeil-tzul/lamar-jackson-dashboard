@@ -17,3 +17,10 @@ db/
 
 # streamlit cache
 .streamlit/
+data/bronze/
+data/silver/
+data/gold/
+db/
+.venv/
+venv/
+.env
