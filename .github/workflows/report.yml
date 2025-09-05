@@ -1,55 +1,48 @@
 name: Build & Publish Lamar Report
 
 on:
-  workflow_dispatch: {}
-  # Daily at 06:14 UTC (adjust as you like)
+  workflow_dispatch:
+    inputs:
+      year:
+        description: "Season year"
+        required: true
+        default: "2024"
+      player:
+        description: "Player name"
+        required: true
+        default: "Lamar Jackson"
   schedule:
-    - cron: '14 06 * * *'
+    - cron: "0 6 * * MON"   # every Monday 06:00 UTC
 
 permissions:
   contents: write
-
-# Avoid overlapping runs
-concurrency:
-  group: report
-  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: "3.10"
           cache: pip
           cache-dependency-path: requirements-ci.txt
 
       - name: Install deps (pinned)
         run: |
           python -V
-          python -m pip install --upgrade pip
+          pip install --upgrade pip
           pip install -r requirements-ci.txt
-          python - <<'PY'
-          import importlib
-          for m in ["pandas","duckdb","altair","nfl_data_py","pyarrow"]:
-              mod = importlib.import_module(m)
-              print(f"{m}=={getattr(mod,'__version__','unknown')}")
-          PY
 
       - name: Build bronze→silver→gold
         env:
-          BRONZE_DIR: data/bronze
-          SILVER_DIR: data/silver
-          DUCKDB_PATH: db/nfl.duckdb
+          YEAR:  ${{ inputs.year || '2024' }}
+          PLAYER: ${{ inputs.player || 'Lamar Jackson' }}
         run: |
           mkdir -p data/bronze data/silver data/gold db
-          python scripts/bronze_ingest.py --years "2024" --player "Lamar Jackson"
+          python scripts/bronze_ingest.py --years "${YEAR}" --player "${PLAYER}"
           python scripts/silver_transform.py
           python scripts/gold_build.py
 
@@ -63,5 +56,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add docs/index.html docs/.nojekyll data/gold/fact_lamar_weekly.csv || true
           git commit -m "report: refresh HTML" || echo "nothing to commit"
-          # push safely from detached HEAD to the current branch
-          git push origin HEAD:${{ github.ref_name }}
+          git push

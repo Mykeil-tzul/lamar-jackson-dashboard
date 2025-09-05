@@ -1,32 +1,15 @@
-name: ci
+name: "ci: use pinned requirements + pytest"
 
 on:
   push:
     branches: [ main ]
-    paths:
-      - "scripts/**"
-      - "tests/**"
-      - "requirements-ci.txt"
-      - ".github/workflows/ci.yml"
   pull_request:
-    branches: [ main ]
-    paths:
-      - "scripts/**"
-      - "tests/**"
-      - "requirements-ci.txt"
-      - ".github/workflows/ci.yml"
-  workflow_dispatch:
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: read
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -35,20 +18,17 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-ci.txt
 
-      - name: Install pinned deps
+      - name: Install deps (pinned for CI)
         run: |
           python -V
-          pip install -U pip
+          pip install --upgrade pip
           pip install -r requirements-ci.txt
           python - <<'PY'
-          import importlib, sys
-          for m in ("pandas","duckdb","altair","nfl_data_py","pyarrow","pytest"):
-              try:
-                  mod = importlib.import_module(m)
-                  print(f"{m}=={getattr(mod, '__version__', '?')}")
-              except Exception as e:
-                  print(f"{m} import failed: {e}", file=sys.stderr)
+          import importlib
+          for m in ["pandas","duckdb","altair","nfl_data_py","pyarrow","pytest"]:
+              mod = importlib.import_module(m)
+              print(m, getattr(mod, "__version__", "unknown"))
           PY
 
       - name: Run tests
-        run: python -m pytest -q tests
+        run: python -m pytest -q
